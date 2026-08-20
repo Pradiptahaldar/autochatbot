@@ -5,6 +5,8 @@ from app.database.repositories import PersonRepository, ConversationRepository, 
 from app.memory.short_term import ShortTermMemory
 from app.database.database import get_connection, initialize_database
 from app.memory.memory_manager import MemoryManager
+from app.memory.long_term import LongTermMemory
+from app.memory.retrieval import MemoryRetriever
 @pytest.fixture(autouse=True)
 def clean_database():
     initialize_database()
@@ -71,15 +73,10 @@ def test_get_person_memories():
         memory_type="topic",
         importance=0.5
     )
-
     memories = manager.get_person_memories("person_001")
-
     assert len(memories) == 2
-
-
 def test_remove_memory():
     manager = MemoryManager()
-
     manager.add_memory(
         memory_id="memory_manager_005",
         person_id="person_001",
@@ -87,15 +84,10 @@ def test_remove_memory():
         memory_type="event",
         importance=0.4
     )
-
     manager.remove_memory("memory_manager_005")
-
     assert manager.get_memory("memory_manager_005") is None
-
-
 def test_invalid_importance():
     manager = MemoryManager()
-
     try:
         manager.add_memory(
             memory_id="memory_manager_006",
@@ -111,7 +103,6 @@ def test_get_recent_messages():
     person_repository = PersonRepository()
     conversation_repository = ConversationRepository()
     message_repository = MessageRepository()
-
     person_repository.create(
         Person(
             person_id="short_term_person",
@@ -120,7 +111,6 @@ def test_get_recent_messages():
             created_at=datetime(2026, 8, 20, 17, 0)
         )
     )
-
     conversation_repository.create(
         Conversation(
             conversation_id="short_term_conversation",
@@ -129,7 +119,6 @@ def test_get_recent_messages():
             created_at=datetime(2026, 8, 20, 17, 1)
         )
     )
-
     for index in range(5):
         message_repository.create(
             Message(
@@ -146,21 +135,17 @@ def test_get_recent_messages():
                 text=f"Message {index}"
             )
         )
-
     memory = ShortTermMemory(message_repository)
-
     recent_messages = memory.get_recent_messages(
         "short_term_conversation",
         limit=3
     )
-
     assert len(recent_messages) == 3
     assert recent_messages[0].text == "Message 2"
     assert recent_messages[1].text == "Message 3"
     assert recent_messages[2].text == "Message 4"
 def test_recent_messages_invalid_limit():
     memory = ShortTermMemory()
-
     try:
         memory.get_recent_messages(
             "conversation_001",
@@ -169,3 +154,131 @@ def test_recent_messages_invalid_limit():
         assert False
     except ValueError:
         assert True
+def test_get_long_term_memories():
+    memory_manager = MemoryManager()
+    memory_manager.add_memory(
+        memory_id="long_term_001",
+        person_id="person_001",
+        content="Important fact",
+        memory_type="fact",
+        importance=0.9
+    )
+    memory_manager.add_memory(
+        memory_id="long_term_002",
+        person_id="person_001",
+        content="Less important fact",
+        memory_type="fact",
+        importance=0.5
+    )
+    memory_manager.add_memory(
+        memory_id="long_term_003",
+        person_id="person_002",
+        content="Another person's memory",
+        memory_type="fact",
+        importance=0.8
+    )
+    long_term = LongTermMemory()
+    memories = long_term.get_memories(
+        "person_001"
+    )
+    assert len(memories) == 2
+    assert memories[0].importance == 0.9
+    assert memories[1].importance == 0.5
+def test_get_limited_long_term_memories():
+    memory_manager = MemoryManager()
+    for index in range(5):
+        memory_manager.add_memory(
+            memory_id=f"long_term_limit_{index}",
+            person_id="person_003",
+            content=f"Memory {index}",
+            memory_type="topic",
+            importance=0.5 + index * 0.1
+        )
+    long_term = LongTermMemory()
+    memories = long_term.get_memories(
+        "person_003",
+        limit=2
+    )
+    assert len(memories) == 2
+def test_long_term_memory_invalid_limit():
+    long_term = LongTermMemory()
+    try:
+        long_term.get_memories(
+            "person_001",
+            limit=0
+        )
+        assert False
+    except ValueError:
+        assert True
+def test_memory_retriever():
+    memory_manager = MemoryManager()
+    memory_manager.add_memory(
+        memory_id="retrieval_memory_001",
+        person_id="retrieval_person",
+        content="Person likes programming.",
+        memory_type="preference",
+        importance=0.9
+    )
+    message_repository = MessageRepository()
+    message_repository.create(
+        Message(
+            message_id="retrieval_message_001",
+            conversation_id="retrieval_conversation",
+            sender="Person A",
+            timestamp=datetime(2026, 8, 20, 18, 0),
+            text="What are you doing?"
+        )
+    )
+    retriever = MemoryRetriever()
+    context = retriever.get_context(
+        person_id="retrieval_person",
+        conversation_id="retrieval_conversation"
+    )
+    assert "recent_messages" in context
+    assert "memories" in context
+    assert len(context["recent_messages"]) == 1
+    assert len(context["memories"]) == 1
+    assert (
+        context["recent_messages"][0].text
+        == "What are you doing?"
+    )
+    assert (
+        context["memories"][0].content
+        == "Person likes programming."
+    )
+def test_memory_retriever_limits():
+    memory_manager = MemoryManager()
+    for index in range(3):
+        memory_manager.add_memory(
+            memory_id=f"retrieval_limit_memory_{index}",
+            person_id="retrieval_limit_person",
+            content=f"Memory {index}",
+            memory_type="fact",
+            importance=0.5 + index * 0.1
+        )
+    message_repository = MessageRepository()
+    for index in range(4):
+        message_repository.create(
+            Message(
+                message_id=f"retrieval_limit_message_{index}",
+                conversation_id="retrieval_limit_conversation",
+                sender="Person A",
+                timestamp=datetime(
+                    2026,
+                    8,
+                    20,
+                    18,
+                    index
+                ),
+                text=f"Message {index}"
+            )
+        )
+    retriever = MemoryRetriever()
+    context = retriever.get_context(
+        person_id="retrieval_limit_person",
+        conversation_id="retrieval_limit_conversation",
+        recent_message_limit=2,
+        long_term_limit=1
+    )
+    assert len(context["recent_messages"]) == 2
+    assert len(context["memories"]) == 1
