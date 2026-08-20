@@ -28,3 +28,12 @@ class Memory:
     memory_type: str
     importance: int
     created_at: datetime
+@dataclass
+class Personality:
+    personality_id: str
+    name: str
+    tone: str
+    formality: str
+    emoji_usage: str
+    response_length: str
+    created_at: datetime

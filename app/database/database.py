@@ -52,6 +52,15 @@ def initialize_database() -> None:
                     REFERENCES people(person_id)
                     ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS personalities (
+                personality_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                tone TEXT NOT NULL,
+                formality TEXT NOT NULL,
+                emoji_usage TEXT NOT NULL,
+                response_length TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
             """
         )
 
