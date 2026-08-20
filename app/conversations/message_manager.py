@@ -1,8 +1,12 @@
 from datetime import datetime
 from app.database.models import Message
+from app.database.repositories import MessageRepository
 class MessageManager:
-    def __init__(self):
-        self._messages: dict[str, Message] = {}
+    def __init__(
+        self,
+        repository: MessageRepository | None = None
+    ):
+        self._repository = repository or MessageRepository()
     def add_message(
         self,
         message_id: str,
@@ -12,7 +16,7 @@ class MessageManager:
         text: str
     ) -> Message:
 
-        if message_id in self._messages:
+        if self.get_message(message_id) is not None:
             raise ValueError(
                 f"Message already exists: {message_id}"
             )
@@ -25,7 +29,7 @@ class MessageManager:
             text=text
         )
 
-        self._messages[message_id] = message
+        self._repository.create(message)
 
         return message
 
@@ -34,22 +38,15 @@ class MessageManager:
         message_id: str
     ) -> Message | None:
 
-        return self._messages.get(message_id)
+        return self._repository.get_by_id(message_id)
 
     def get_conversation_messages(
         self,
         conversation_id: str
     ) -> list[Message]:
 
-        messages = [
-            message
-            for message in self._messages.values()
-            if message.conversation_id == conversation_id
-        ]
-
-        return sorted(
-            messages,
-            key=lambda message: message.timestamp
+        return self._repository.get_by_conversation(
+            conversation_id
         )
 
     def remove_message(
@@ -57,9 +54,9 @@ class MessageManager:
         message_id: str
     ) -> None:
 
-        if message_id not in self._messages:
+        if self.get_message(message_id) is None:
             raise ValueError(
                 f"Message not found: {message_id}"
             )
 
-        del self._messages[message_id]
+        self._repository.delete(message_id)
