@@ -20,3 +20,11 @@ class Message:
     sender: str
     text: str
     timestamp: datetime
+@dataclass
+class Memory:
+    memory_id: str
+    person_id: str
+    content: str
+    memory_type: str
+    importance: int
+    created_at: datetime

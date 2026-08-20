@@ -40,6 +40,18 @@ def initialize_database() -> None:
                     REFERENCES conversations(conversation_id)
                     ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS memories (
+                memory_id TEXT PRIMARY KEY,
+                person_id TEXT NOT NULL,
+                content TEXT NOT NULL,
+                memory_type TEXT NOT NULL,
+                importance REAL NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (person_id)
+                    REFERENCES people(person_id)
+                    ON DELETE CASCADE
+            );
             """
         )
 
