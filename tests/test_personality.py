@@ -1,6 +1,7 @@
 from app.personality.global_profile import GlobalProfile
 from app.personality.person_profile import PersonProfile
 from app.personality.style_analyzer import StyleAnalyzer
+from app.personality.language_detector import LanguageResult, LanguageDetector
 def test_global_profile():
     profile = GlobalProfile(
         tone="casual",
@@ -129,3 +130,50 @@ def test_find_common_phrases():
     assert result["kal college"] == 3
     assert result["college jabi"] == 2
     assert result["college ashbi"] == 1
+def test_language_result():
+    result = LanguageResult(
+        language="romanized_hindi",
+        script="latin",
+        confidence=0.92
+    )
+    assert result.language == "romanized_hindi"
+    assert result.script == "latin"
+    assert result.confidence == 0.92
+def test_language_detector_empty_message():
+    detector = LanguageDetector()
+    result = detector.detect("")
+    assert result.language == "unknown"
+    assert result.script == "unknown"
+    assert result.confidence == 0.0
+def test_language_detector_english():
+    detector= LanguageDetector()
+    result = detector.detect(
+        "hello how are you"
+    )
+    assert result.language =="english"
+    assert result.script =="latin"
+    assert result.confidence == 0.8
+def test_language_detector_hindi():
+    detector = LanguageDetector()
+    result = detector.detect(
+        "तुम कैसे हो"
+    )
+    assert result.language == "hindi"
+    assert result.script == "devanagari"
+    assert result.confidence == 0.9
+def test_language_detector_bengali():
+    detector = LanguageDetector()
+    result = detector.detect(
+        "তুমি কেমন আছো"
+    )
+    assert result.language == "bengali"
+    assert result.script == "bengali"
+    assert result.confidence == 0.9
+def test_language_detector_romanized_hindi():
+    detector = LanguageDetector()
+    result = detector.detect(
+        "tum kya kar rahe ho"
+    )
+    assert result.language == "romanized_hindi"
+    assert result.script == "latin"
+    assert result.confidence == 0.8
