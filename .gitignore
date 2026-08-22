@@ -1,2 +1,7 @@
 database/*.db
 database/*.db-*
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
