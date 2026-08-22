@@ -85,8 +85,6 @@ def test_find_common_words():
     assert result["bro"] == 3
     assert result["hello"] == 2
     assert result["how"] == 1
-    assert result["are"] == 1
-    assert result["you"] == 1
 def test_find_common_words_ignores_punctuation():
     analyzer = StyleAnalyzer()
     messages = [
@@ -109,3 +107,25 @@ def test_get_common_words():
         limit=2
     )
     assert result == ["bro", "yeah"]
+def test_find_common_words_ignores_stop_words():
+    analyzer = StyleAnalyzer()
+    messages = [
+        "the cat is here",
+        "the cat is there",
+        "cat is sleeping"
+    ]
+    result = analyzer.find_common_words(messages)
+    assert "the" not in result
+    assert "is" not in result
+    assert result["cat"] == 3
+def test_find_common_phrases():
+    analyzer = StyleAnalyzer()
+    messages = [
+        "kal college jabi",
+        "kal college jabi",
+        "kal college ashbi"
+    ]
+    result = analyzer.find_common_phrases(messages)
+    assert result["kal college"] == 3
+    assert result["college jabi"] == 2
+    assert result["college ashbi"] == 1

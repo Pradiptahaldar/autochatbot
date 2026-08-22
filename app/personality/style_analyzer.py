@@ -1,4 +1,10 @@
 import re
+STOP_WORDS = {
+    "a","an","and","are","as","at","be","but","by","for",
+    "from","has","have","he","her","his","i","if","in",
+    "is","it","me","my","of","on","or","our","she","that","the","their",
+    "them","there","they","this","to","was","we","were","with","you","your"
+}  
 class StyleAnalyzer:
     def analyze_messages(self, messages):
         if not messages:
@@ -63,6 +69,10 @@ class StyleAnalyzer:
                 r"\b[a-zA-Z]+\b",
                 message.lower()
             )
+            words=[word
+                   for word in words
+                   if word not in STOP_WORDS
+            ]
             for word in words:
                 word_counts[word] = (
                     word_counts.get(word, 0) + 1
@@ -82,3 +92,23 @@ class StyleAnalyzer:
             word
             for word, count in sorted_words[:limit]
         ]
+    def find_common_phrases(self, messages):
+        phrase_counts = {}
+        for message in messages:
+            words = re.findall(
+                r"\b[a-zA-Z]+\b",
+                message.lower()
+            )
+            words = [
+                word
+                for word in words
+                if word not in STOP_WORDS
+            ]
+            for index in range(len(words) - 1):
+                phrase = (
+                    f"{words[index]} {words[index + 1]}"
+                )
+                phrase_counts[phrase] = (
+                    phrase_counts.get(phrase, 0) + 1
+                )
+        return phrase_counts
