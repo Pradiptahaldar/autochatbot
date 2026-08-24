@@ -33,3 +33,19 @@ class AttentionAnalyzer:
                 should_attention=True,
                 reason="group_message_to_everyone"
             )
+        if (
+            event.conversation_scope == "group"
+            and event.target == "unknown"
+        ):
+            return AttentionResult(
+                should_attention=True,
+                reason="group_message_target_unknown"
+            )
+        if (
+            event.conversation_scope == "community"
+            and event.target == "me"
+        ):
+            return AttentionResult(
+                should_attention=True,
+                reason="community_message_directed_at_me"
+            )

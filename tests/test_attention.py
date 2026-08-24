@@ -59,3 +59,32 @@ def test_group_message_to_everyone_requires_attention():
     result = analyzer.analyze(event)
     assert result.should_attention is True
     assert result.reason == "group_message_to_everyone"
+def test_group_message_with_unknown_target_requires_attention():
+    analyzer = AttentionAnalyzer()
+    event = MessageEvent(
+        content_type="text",
+        platform="whatsapp",
+        sender_id="person_001",
+        conversation_id="group_001",
+        conversation_scope="group",
+        target="unknown"
+    )
+    result = analyzer.analyze(event)
+    assert result.should_attention is True
+    assert result.reason == "group_message_target_unknown"
+def test_community_message_directed_at_me_requires_attention():
+    analyzer = AttentionAnalyzer()
+
+    event = MessageEvent(
+        content_type="text",
+        platform="whatsapp",
+        sender_id="person_001",
+        conversation_id="community_001",
+        conversation_scope="community",
+        target="me"
+    )
+
+    result = analyzer.analyze(event)
+
+    assert result.should_attention is True
+    assert result.reason == "community_message_directed_at_me"
